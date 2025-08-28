@@ -1,0 +1,90 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    
+    environment:
+      name: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          
+      - name: Create .env files
+        run: |
+          cat > .env << 'EOF'
+          ${{ secrets.ENV_FILE }}
+          EOF
+          mkdir -p frontend
+          cat > frontend/.env << 'EOF'
+          ${{ secrets.FRONTEND_ENV_FILE }}
+          EOF
+
+      - name: Ensure remote directory exists
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }}"
+          
+      - name: Sync files to server (rsync)
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y rsync
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'docker-compose.override.yml' \
+            --exclude 'node_modules' \
+            --exclude 'frontend/node_modules' \
+            --exclude '.venv' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          
+      - name: Deploy application
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            set -euo pipefail
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            rm -f docker-compose.override.yml || true
+
+            echo "${{ secrets.DOCKER_TOKEN }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            elif docker-compose version >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            else
+              echo "Docker Compose is not installed (neither v2 nor v1). Please install docker compose plugin (docker-compose-plugin)." >&2
+              exit 1
+            fi
+
+            $COMPOSE -f docker-compose.yml down --remove-orphans || true
+            docker image prune -af || true
+            $COMPOSE -f docker-compose.yml build
+            $COMPOSE -f docker-compose.yml up -d
+            $COMPOSE -f docker-compose.yml ps
+            sleep 30
+          EOF
+          
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://${{ secrets.SERVER_HOST }}/health
+          curl -fL --max-time 10 http://${{ secrets.SERVER_HOST }}/ || true
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false

@@ -1,0 +1,58 @@
+repos:
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.4
+    hooks:
+      - id: ruff-format
+        name: Ruff Format
+      - id: ruff-check
+        name: Ruff Check
+        args:
+          - --fix
+          - --select
+          - I
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        name: MyPy
+        entry: bash -c 'cd backend && uv run mypy .'
+        language: system
+        types: [python]
+        files: ^backend/
+        pass_filenames: false
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        name: bandit
+        entry: bash -c 'cd backend && uv run bandit -c pyproject.toml -r . -ll'
+        language: system
+        types: [python]
+        files: ^backend/
+        pass_filenames: false
+
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: bash -c 'cd frontend && npm run lint -- --fix'
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        pass_filenames: false
+
+      - id: prettier
+        name: Prettier
+        entry: bash -c 'cd frontend && npx prettier -cw .'
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx|json|css|md)$
+
+      - id: typescript-check
+        name: TypeScript Check
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false

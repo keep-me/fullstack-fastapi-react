@@ -1,0 +1,147 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/frontend.yml'
+
+jobs:
+  test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      rabbitmq:
+        image: rabbitmq:4-management
+        env:
+          RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
+          RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-interval 10s
+          --health-timeout 60s
+          --health-retries 3
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 10s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Set up Python for backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install backend dependencies
+        run: uv sync --all-extras --dev
+        working-directory: backend
+
+      - name: Install service clients
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client redis-tools
+
+      - name: Wait for services
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done
+          until redis-cli -h localhost -p 6379 ping | grep -q PONG; do sleep 2; done
+          until curl -f -s http://localhost:15672 > /dev/null; do sleep 2; done
+
+      - name: Run migrations
+        run: uv run alembic upgrade head
+        working-directory: backend
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+
+      - name: Start backend for Playwright
+        working-directory: backend
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
+          RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
+
+        run: |
+          echo "Starting backend..."
+          nohup uv run fastapi run > backend.log 2>&1 &
+          for i in {1..60}; do
+            curl -f -s http://localhost:8000/health && break
+            sleep 1
+          done
+          
+          if ! curl -f -s http://localhost:8000/health > /dev/null 2>&1; then
+            echo "Backend failed to start properly"
+            echo "Backend logs:"
+            cat backend.log
+            exit 1
+          fi
+          
+          echo "Backend is fully ready and responding"
+
+      - name: Install frontend dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Type check
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: http://localhost:8000
+
+      - name: Run tests (Playwright)
+        run: npm run test -- --reporter=list,html
+        env:
+          VITE_API_BASE_URL: http://localhost:8000
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report

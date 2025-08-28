@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+.cache
+.coverage
+.venv
+.benchmarks
+*.egg-info
+.git
+.gitignore
+.idea
+.vscode

@@ -1,0 +1,93 @@
+services:
+
+  postgres:
+    restart: "no"
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.local
+
+  pgadmin:
+    restart: "no"
+    env_file:
+      - .env.local
+    
+  grafana:
+    restart: "no"
+    env_file:
+      - .env.local
+
+  prestart:
+    env_file:
+      - .env.local
+    environment:
+      - POSTGRES_SERVER=postgres
+
+  rabbitmq:
+    restart: "no"
+    ports:
+      - "5672:5672"
+    env_file:
+      - .env.local
+
+  redis:
+    restart: "no"
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env.local
+
+  backend:
+    restart: "no"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.local
+    environment:
+      - POSTGRES_SERVER=postgres
+      - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis
+    volumes:
+      - /app/.venv
+    develop:
+      watch:
+        - path: ./backend
+          action: sync
+          target: /app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .pytest_cache/
+            - .venv/
+            - .cache/
+            - .benchmarks/
+        
+        - path: ./backend/pyproject.toml
+          action: rebuild
+        
+        - path: ./backend/app/core/config.py
+          action: sync+restart
+          target: /app/app/core/config.py
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - /app/node_modules
+    env_file:
+      - ./frontend/.env.local
+    develop:
+      watch:
+        - path: ./frontend
+          action: sync
+          target: /app
+          ignore:
+            - node_modules/
+            - dist/
+            - .husky/
+            - playwrite-report/
