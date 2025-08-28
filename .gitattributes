@@ -1,0 +1,5 @@
+*.html linguist-detectable=false
+*.css linguist-detectable=false
+
+*.jsx linguist-language=JavaScript
+*.tsx linguist-language=TypeScript
