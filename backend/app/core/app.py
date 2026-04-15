@@ -19,6 +19,14 @@ tags_metadata = [
         "name": "Auth",
         "description": "Authorization",
     },
+    {
+        "name": "Roles",
+        "description": "Role management for access control",
+    },
+    {
+        "name": "Permissions",
+        "description": "Permission management for fine-grained access control",
+    },
 ]
 
 

@@ -36,6 +36,14 @@ class UserAccessError(HTTPException):
             case "invalid_username":
                 message = "Invalid username."
                 error = "Username is invalid or empty."
+            case "role_has_users":
+                status_code = status.HTTP_400_BAD_REQUEST
+                message = "Cannot delete role."
+                error = "Role has users assigned. Please reassign users first."
+            case "insufficient_permissions":
+                status_code = status.HTTP_403_FORBIDDEN
+                message = "Access denied."
+                error = "Insufficient permissions to perform this action."
 
         super().__init__(
             status_code=status_code,

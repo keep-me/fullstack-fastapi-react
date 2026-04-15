@@ -10,6 +10,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
+from app.repositories.permission import PermissionRepository
 from app.repositories.role import RoleRepository
 from app.repositories.session import SessionRepository
 from app.repositories.user import UserRepository
@@ -31,6 +32,7 @@ class UnitOfWork:
         self.users = UserRepository()
         self.sessions = SessionRepository()
         self.roles = RoleRepository()
+        self.permissions = PermissionRepository()
         logger.debug("Unit of Work initialized")
 
     async def __aenter__(self) -> "UnitOfWork":

@@ -48,5 +48,44 @@ class User(Base):
     def is_admin(self) -> bool:
         return self.role is not None and self.role.name == RoleEnum.ADMIN
 
+    def has_permission(self, permission_name: str) -> bool:
+        """
+        Check if the user has a specific permission.
+        Admin users have all permissions.
+        """
+        if self.is_admin:
+            return True
+        if self.role is None:
+            return False
+        return self.role.has_permission(permission_name)
+
+    def has_any_permission(self, permission_names: list[str]) -> bool:
+        """
+        Check if the user has any of the specified permissions.
+        """
+        if self.is_admin:
+            return True
+        if self.role is None:
+            return False
+        return any(self.role.has_permission(p) for p in permission_names)
+
+    def has_all_permissions(self, permission_names: list[str]) -> bool:
+        """
+        Check if the user has all of the specified permissions.
+        """
+        if self.is_admin:
+            return True
+        if self.role is None:
+            return False
+        return all(self.role.has_permission(p) for p in permission_names)
+
+    def get_permissions(self) -> list[str]:
+        """
+        Get all permission names for this user.
+        """
+        if self.role is None:
+            return []
+        return self.role.get_permission_names()
+
     def __repr__(self) -> str:
         return f"<User {self.username}>"

@@ -89,6 +89,81 @@ async def get_current_active_superuser(
     return current_user
 
 
+def require_permission(permission_name: str):
+    """
+    Dependency factory for checking if a user has a specific permission.
+    Admin users have all permissions.
+    """
+
+    async def permission_checker(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if not current_user.has_permission(permission_name):
+            logger.warning(
+                f"User {current_user.id} attempted action without permission: {permission_name}"
+            )
+            raise UserAccessError(error_type="insufficient_permissions")
+        return current_user
+
+    return permission_checker
+
+
+def require_any_permission(permission_names: list[str]):
+    """
+    Dependency factory for checking if a user has any of the specified permissions.
+    Admin users have all permissions.
+    """
+
+    async def permission_checker(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if not current_user.has_any_permission(permission_names):
+            logger.warning(
+                f"User {current_user.id} attempted action without any of permissions: {permission_names}"
+            )
+            raise UserAccessError(error_type="insufficient_permissions")
+        return current_user
+
+    return permission_checker
+
+
+def require_all_permissions(permission_names: list[str]):
+    """
+    Dependency factory for checking if a user has all of the specified permissions.
+    Admin users have all permissions.
+    """
+
+    async def permission_checker(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if not current_user.has_all_permissions(permission_names):
+            logger.warning(
+                f"User {current_user.id} attempted action without all permissions: {permission_names}"
+            )
+            raise UserAccessError(error_type="insufficient_permissions")
+        return current_user
+
+    return permission_checker
+
+
+def require_role(role_name: str):
+    """
+    Dependency factory for checking if a user has a specific role.
+    """
+
+    async def role_checker(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if current_user.role is None or current_user.role.name != role_name:
+            logger.warning(
+                f"User {current_user.id} attempted action without role: {role_name}"
+            )
+            raise UserAccessError(error_type="insufficient_permissions")
+        return current_user
+
+    return role_checker
+
+
 async def pagination_params(skip: int = 0, limit: int = 100) -> PaginationParams:
     """
     Get pagination parameters.

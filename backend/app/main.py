@@ -4,9 +4,9 @@ Main application file.
 
 import logging.config
 import os
+import platform
 from typing import Any, cast
 
-import gunicorn.app.base
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -88,58 +88,72 @@ async def health_check() -> dict[str, str]:
 app.add_middleware(RequestIDMiddleware)
 
 
-class StandaloneApplication(gunicorn.app.base.BaseApplication):  # type: ignore
-    """
-    Standalone application for running the FastAPI app.
-    """
+if platform.system() != "Windows":
+    import gunicorn.app.base
 
-    def __init__(self, app: Any, options: dict[str, Any] | None = None) -> None:
+    class StandaloneApplication(gunicorn.app.base.BaseApplication):  # type: ignore
         """
-        Initialize the standalone application.
+        Standalone application for running the FastAPI app.
         """
-        self.options = options or {}
-        self.application = app
-        super().__init__()
 
-    def load_config(self) -> None:
-        """
-        Load configuration from options.
-        """
-        config = {
-            key: value
-            for key, value in self.options.items()
-            if key in self.cfg.settings and value is not None
-        }
-        for key, value in config.items():
-            self.cfg.set(key.lower(), value)
+        def __init__(self, app: Any, options: dict[str, Any] | None = None) -> None:
+            """
+            Initialize the standalone application.
+            """
+            self.options = options or {}
+            self.application = app
+            super().__init__()
 
-    def load(self) -> Any:
-        """
-        Load the application.
-        """
-        return self.application
+        def load_config(self) -> None:
+            """
+            Load configuration from options.
+            """
+            config = {
+                key: value
+                for key, value in self.options.items()
+                if key in self.cfg.settings and value is not None
+            }
+            for key, value in config.items():
+                self.cfg.set(key.lower(), value)
+
+        def load(self) -> Any:
+            """
+            Load the application.
+            """
+            return self.application
 
 
 if __name__ == "__main__":
-    logger.info(f"Starting server on {settings.SERVER_HOST}:{settings.SERVER_PORT}")
+    if platform.system() == "Windows":
+        import uvicorn
 
-    options = {
-        "bind": f"{settings.SERVER_HOST}:{settings.SERVER_PORT}",
-        "workers": settings.SERVER_WORKERS,
-        "worker_class": "uvicorn.workers.UvicornWorker",
-        "timeout": 90,
-        "keepalive": 10,
-        "worker_connections": 1000,
-        "graceful_timeout": 60,
-        "limit_request_line": 8190,
-        "limit_request_fields": 100,
-        "limit_request_field_size": 8190,
-        "loglevel": f"{settings.LOG_LEVEL.lower()}",
-        "preload_app": True,
-        "reuse_port": True,
-        "capture_output": True,
-        "errorlog": "-",
-        "accesslog": "-",
-    }
+        logger.info(f"Starting server on {settings.SERVER_HOST}:{settings.SERVER_PORT}")
+        uvicorn.run(
+            "app.main:app",
+            host=settings.SERVER_HOST,
+            port=settings.SERVER_PORT,
+            reload=True,
+        )
+    else:
+        logger.info(f"Starting server on {settings.SERVER_HOST}:{settings.SERVER_PORT}")
 
-    StandaloneApplication(app, options).run()
+        options = {
+            "bind": f"{settings.SERVER_HOST}:{settings.SERVER_PORT}",
+            "workers": settings.SERVER_WORKERS,
+            "worker_class": "uvicorn.workers.UvicornWorker",
+            "timeout": 90,
+            "keepalive": 10,
+            "worker_connections": 1000,
+            "graceful_timeout": 60,
+            "limit_request_line": 8190,
+            "limit_request_fields": 100,
+            "limit_request_field_size": 8190,
+            "loglevel": f"{settings.LOG_LEVEL.lower()}",
+            "preload_app": True,
+            "reuse_port": True,
+            "capture_output": True,
+            "errorlog": "-",
+            "accesslog": "-",
+        }
+
+        StandaloneApplication(app, options).run()

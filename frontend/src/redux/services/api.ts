@@ -124,7 +124,7 @@ const axiosBaseQuery = () => {
 export const api = createApi({
   reducerPath: "api",
   baseQuery: axiosBaseQuery(),
-  tagTypes: ["User", "UserList"],
+  tagTypes: ["User", "UserList", "Role", "RoleList", "Permission", "PermissionList"],
   endpoints: () => ({}),
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: 30,

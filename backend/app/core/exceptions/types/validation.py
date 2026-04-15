@@ -48,6 +48,30 @@ class ValidationError(HTTPException):
             case "invalid_pagination":
                 message = "Pagination parameters must be greater than 0."
                 error = "Invalid pagination parameters"
+            case "role_not_found":
+                message = "Role not found"
+                error = "The specified role does not exist"
+            case "role_exists":
+                message = "Role already exists"
+                error = "A role with this name already exists"
+            case "permission_not_found":
+                message = "Permission not found"
+                error = "The specified permission does not exist"
+            case "permission_exists":
+                message = "Permission already exists"
+                error = "A permission with this name already exists"
+            case "role_or_permission_not_found":
+                message = "Role or permission not found"
+                error = "The specified role or permission does not exist"
+            case "invalid_permission_name":
+                message = "Invalid permission name"
+                error = "Permission name must be between 1 and 50 characters"
+            case "invalid_resource":
+                message = "Invalid resource"
+                error = "Resource must be between 1 and 30 characters"
+            case "invalid_action":
+                message = "Invalid action"
+                error = "Action must be between 1 and 20 characters"
 
         super().__init__(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
