@@ -12,12 +12,11 @@ import {
   Checkbox,
   Spinner,
   Badge,
-  Divider,
   IconButton,
   Tooltip,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { LuPlus, LuX, LuSave, LuShield } from "react-icons/lu";
+import { LuLock, LuEye, LuChevronUp } from "react-icons/lu";
 import {
   useGetRoleByIdQuery,
   useUpdateRoleMutation,
@@ -155,14 +154,14 @@ const RoleDetail: React.FC<RoleDetailProps> = ({ roleId, onClose, onSaved }) => 
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
         <Flex align="center" gap={2}>
-          <LuShield size={24} />
+          <LuLock size={24} />
           <Heading size="md">
             {isNewRole ? "Create New Role" : `Edit Role: ${role?.name}`}
           </Heading>
         </Flex>
         <Tooltip content="Close">
           <IconButton variant="ghost" onClick={onClose}>
-            <LuX />
+            <LuChevronUp />
           </IconButton>
         </Tooltip>
       </Flex>
@@ -262,7 +261,7 @@ const RoleDetail: React.FC<RoleDetailProps> = ({ roleId, onClose, onSaved }) => 
                       </Checkbox.Root>
                     ))}
                   </Flex>
-                  <Divider mt={4} />
+                  <Box mt={4} h="1px" bg="gray.200" _dark={{ bg: "gray.700" }} />
                 </Box>
               ))}
             </Flex>
@@ -280,7 +279,7 @@ const RoleDetail: React.FC<RoleDetailProps> = ({ roleId, onClose, onSaved }) => 
           disabled={isSaving}
           loading={isSaving}
         >
-          <LuSave />
+          <LuEye />
           {isNewRole ? "Create Role" : "Save Changes"}
         </Button>
       </Flex>

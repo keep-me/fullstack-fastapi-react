@@ -7,12 +7,13 @@ import {
   Text,
   Badge,
   Spinner,
-  AlertDialog,
+  Dialog,
   IconButton,
   Tooltip,
+  Portal,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { LuTrash2, LuEdit, LuShield } from "react-icons/lu";
+import { LuLock, LuEye, LuChevronUp } from "react-icons/lu";
 import {
   useGetRolesQuery,
   useDeleteRoleMutation,
@@ -93,7 +94,7 @@ const RoleList: React.FC<RoleListProps> = ({ onSelectRole, selectedRoleId }) => 
   return (
     <Box>
       <Flex align="center" mb={4} gap={2}>
-        <LuShield size={24} />
+        <LuLock size={24} />
         <Heading size="md">Roles</Heading>
       </Flex>
 
@@ -127,7 +128,7 @@ const RoleList: React.FC<RoleListProps> = ({ onSelectRole, selectedRoleId }) => 
                         onSelectRole(role);
                       }}
                     >
-                      <LuEdit />
+                      <LuEye />
                     </IconButton>
                   </Tooltip>
                   {role.name !== "ADMIN" && (
@@ -141,7 +142,7 @@ const RoleList: React.FC<RoleListProps> = ({ onSelectRole, selectedRoleId }) => 
                           setDeleteConfirmRole(role);
                         }}
                       >
-                        <LuTrash2 />
+                        <LuLock />
                       </IconButton>
                     </Tooltip>
                   )}
@@ -167,37 +168,39 @@ const RoleList: React.FC<RoleListProps> = ({ onSelectRole, selectedRoleId }) => 
         ))}
       </Box>
 
-      <AlertDialog.Root
+      <Dialog.Root
         open={!!deleteConfirmRole}
         onOpenChange={() => setDeleteConfirmRole(null)}
       >
-        <AlertDialog.Backdrop />
-        <AlertDialog.Positioner>
-          <AlertDialog.Content>
-            <AlertDialog.Header>Delete Role</AlertDialog.Header>
-            <AlertDialog.Body>
-              <Text>
-                Are you sure you want to delete the role{" "}
-                <strong>{deleteConfirmRole?.name}</strong>?
-              </Text>
-              <Text mt={2} fontSize="sm" color="gray.500">
-                This action cannot be undone.
-              </Text>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <AlertDialog.Cancel asChild>
-                <Button variant="surface">Cancel</Button>
-              </AlertDialog.Cancel>
-              <Button
-                colorPalette="red"
-                onClick={() => deleteConfirmRole && handleDeleteRole(deleteConfirmRole)}
-              >
-                Delete
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Content>
-        </AlertDialog.Positioner>
-      </AlertDialog.Root>
+        <Portal>
+          <Dialog.Backdrop />
+          <Dialog.Positioner>
+            <Dialog.Content>
+              <Dialog.Header>Delete Role</Dialog.Header>
+              <Dialog.Body>
+                <Text>
+                  Are you sure you want to delete the role{" "}
+                  <strong>{deleteConfirmRole?.name}</strong>?
+                </Text>
+                <Text mt={2} fontSize="sm" color="gray.500">
+                  This action cannot be undone.
+                </Text>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <Dialog.CloseTrigger asChild>
+                  <Button variant="surface">Cancel</Button>
+                </Dialog.CloseTrigger>
+                <Button
+                  colorPalette="red"
+                  onClick={() => deleteConfirmRole && handleDeleteRole(deleteConfirmRole)}
+                >
+                  Delete
+                </Button>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
     </Box>
   );
 };

@@ -9,7 +9,7 @@ import {
   Dialog,
   CloseButton,
 } from "@chakra-ui/react";
-import { LuLockOpen, LuLock, LuShield, LuHome } from "react-icons/lu";
+import { LuLockOpen, LuLock, LuEye, LuChevronUp } from "react-icons/lu";
 import { ColorModeButton } from "@/components/ui/color-mode";
 import { useGetUserMeQuery } from "@/redux/services/userApi";
 import AuthDialog from "./AuthDialog";
@@ -48,7 +48,7 @@ const Header: React.FC = () => {
             variant={isHomePage ? "solid" : "subtle"}
             size="sm"
             onClick={() => navigate("/")}
-            leftIcon={<LuHome />}
+            leftIcon={<LuChevronUp />}
           >
             Home
           </Button>
@@ -57,7 +57,7 @@ const Header: React.FC = () => {
               variant={isRolesPage ? "solid" : "subtle"}
               size="sm"
               onClick={() => navigate("/roles")}
-              leftIcon={<LuShield />}
+              leftIcon={<LuLock />}
             >
               Roles
             </Button>
@@ -72,7 +72,7 @@ const Header: React.FC = () => {
             size="xs"
             onClick={() => navigate("/")}
           >
-            <LuHome />
+            <LuChevronUp />
           </Button>
           {isAdmin && (
             <Button
@@ -80,7 +80,7 @@ const Header: React.FC = () => {
               size="xs"
               onClick={() => navigate("/roles")}
             >
-              <LuShield />
+              <LuLock />
             </Button>
           )}
         </Flex>

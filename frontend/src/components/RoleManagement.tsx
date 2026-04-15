@@ -1,6 +1,6 @@
 import { Box, Button, Flex, Grid, Heading, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import { LuPlus, LuShield, LuUsers } from "react-icons/lu";
+import { LuLock, LuEye, LuChevronUp } from "react-icons/lu";
 import { useAppSelector } from "@/redux/hooks";
 import RoleList from "./RoleList";
 import RoleDetail from "./RoleDetail";
@@ -37,7 +37,7 @@ const RoleManagement: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <Box p={8} textAlign="center">
-        <LuShield size={48} style={{ margin: "0 auto", marginBottom: 16 }} />
+        <LuLock size={48} style={{ margin: "0 auto", marginBottom: 16 }} />
         <Heading size="lg" mb={4}>Role Management</Heading>
         <Text color="gray.500">Please log in to access role management.</Text>
       </Box>
@@ -47,7 +47,7 @@ const RoleManagement: React.FC = () => {
   if (!isAdmin) {
     return (
       <Box p={8} textAlign="center">
-        <LuShield size={48} style={{ margin: "0 auto", marginBottom: 16, color: "gray.400" }} />
+        <LuLock size={48} style={{ margin: "0 auto", marginBottom: 16, color: "gray.400" }} />
         <Heading size="lg" mb={4}>Access Denied</Heading>
         <Text color="gray.500">
           You need administrator privileges to access role management.
@@ -60,7 +60,7 @@ const RoleManagement: React.FC = () => {
     <Box maxW="1400px" mx="auto" p={5}>
       <Flex justify="space-between" align="center" mb={6}>
         <Flex align="center" gap={3}>
-          <LuShield size={32} />
+          <LuLock size={32} />
           <Box>
             <Heading size="lg">Role Management</Heading>
             <Text fontSize="sm" color="gray.500">
@@ -71,7 +71,7 @@ const RoleManagement: React.FC = () => {
         <Button
           colorPalette="blue"
           onClick={handleCreateRole}
-          leftIcon={<LuPlus />}
+          leftIcon={<LuChevronUp />}
         >
           Create Role
         </Button>
@@ -113,7 +113,7 @@ const RoleManagement: React.FC = () => {
           borderRadius="lg"
           borderStyle="dashed"
         >
-          <LuUsers size={48} style={{ margin: "0 auto", marginBottom: 16, color: "gray.400" }} />
+          <LuEye size={48} style={{ margin: "0 auto", marginBottom: 16, color: "gray.400" }} />
           <Text color="gray.500">
             Select a role from the list to view and edit its details,
             or create a new role.
